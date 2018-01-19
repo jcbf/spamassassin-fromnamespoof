@@ -1,0 +1,1 @@
+loadplugin Mail::SpamAssassin::Plugin::Fromnamespoof Fromnamespoof.pm

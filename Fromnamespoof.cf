@@ -1,0 +1,30 @@
+plugin Mail::SpamAssassin::Plugin::Fromnamespoof
+
+  fns_add_addrlist   (HP_EBAY)     *@ebay.com *@ebay.co.uk
+  fns_add_addrlist   (HP_PAYPAL)   *@paypal.com *@paypal.co.uk
+  fns_add_addrlist   (HOTMAIL)  *@hotmail.com *@hotmail.co.uk
+
+  header   __PLUGIN_FROMNAME_EMAIL eval:check_fromname_contains_email()
+
+  header   __PLUGIN_FROMNAME_SPOOF eval:check_fromname_spoof()
+
+  header   __PLUGIN_FROMNAME_EQUALS_TO eval:check_fromname_equals_to()
+
+  header   __PLUGIN_FROMNAME_OWNERS_DIFFER eval:check_fromname_owners_differ()
+
+  header   __PLUGIN_FROMNAME_OWNER_HP eval:check_fromname_spoof_high_profile()
+
+  meta FROM_SPOOFED_EMAIL  (__PLUGIN_FROMNAME_EMAIL && __PLUGIN_FROMNAME_SPOOF && __PLUGIN_FROMNAME_OWNERS_DIFFER)
+  score FROM_SPOOFED_EMAIL 1
+
+  meta FROM_SPOOFED_EMAIL_HP (FROM_SPOOFED_EMAIL && __PLUGIN_FROMNAME_OWNER_HP)
+  score FROM_SPOOFED_EMAIL_HP 2
+
+  meta FROM_EQUALS_TO_SPOOF  (FROM_SPOOFED_EMAIL && __PLUGIN_FROMNAME_EQUALS_TO)
+  score FROM_EQUALS_TO_SPOOF 1
+
+  meta FROM_EQUALS_TO_NOSPOOF (!__PLUGIN_SPOOFEDFROM && __PLUGIN_FROM_EQUALS_TO)
+  score FROM_EQUALS_TO_NOSPOOF 0.1
+
+
+endif
