@@ -227,10 +227,16 @@ sub _find_address_owner
       }
     }
   }
-
   my $owner = Mail::SpamAssassin::Util::uri_to_domain($check);
+  $check =~ /^([^\@]+)\@(.*)$/;
+
+  if ($owner ne $2) {
+    my $newaddr = "$1\@$owner";
+    return _find_address_owner($newaddr, $list_refs);
+  }
   $owner =~ /^([^\.]+)\./;
   return lc $1;
+
 }
 
 1;
