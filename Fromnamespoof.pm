@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.2;
+my $VERSION = 0.1;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -25,6 +25,7 @@ sub new
 
   # the important bit!
   $self->register_eval_rule("check_fromname_spoof");
+  $self->register_eval_rule("check_fromname_different");
   $self->register_eval_rule("check_fromname_contains_email");
   $self->register_eval_rule("check_fromname_equals_to");
   $self->register_eval_rule("check_fromname_owners_differ");
@@ -69,7 +70,7 @@ sub set_config {
   $conf->{parser}->register_commands(\@cmds);
 }
 
-sub check_fromname_spoof
+sub check_fromname_different
 {
   my ($self, $pms) = @_;
 
@@ -78,6 +79,18 @@ sub check_fromname_spoof
   }
 
   return $pms->{fromname_address_different};
+
+}
+
+sub check_fromname_spoof
+{
+  my ($self, $pms) = @_;
+
+  if (!defined $pms->{fromname_contains_email}) {
+    _check_fromnamespoof($self, $pms);
+  }
+
+  return ($pms->{fromname_address_different} && $pms->{fromname_owner_different});
 
 }
 
