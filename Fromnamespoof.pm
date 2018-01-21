@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.11;
+my $VERSION = 0.12;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -210,11 +210,14 @@ sub _find_address_owner
       my $regexp = qr/$list_refs->{$owner}{$white_addr}/i;
       if ($check =~ /$regexp/)  {
         $owner =~ s/FNS_//;
-        return $owner;
+        return lc $owner;
       }
     }
   }
-  return Mail::SpamAssassin::Util::uri_to_domain($check);
+
+  my $owner = Mail::SpamAssassin::Util::uri_to_domain($check);
+  $owner =~ /^([^\.]+)\./;
+  return lc $1;
 }
 
 1;
