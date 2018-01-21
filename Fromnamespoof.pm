@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.12;
+my $VERSION = 0.2;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -152,7 +152,7 @@ sub _check_fromnamespoof
 
   $fnd{'addr'} = $pms->get("From:name");
 
-  if ($fnd{'addr'} =~ /\W*([a-zA-Z0-9_\+-\.]+@[a-z0-9A-Z-.]+\.[a-z0-9A-Z-.]++)(?:[^a-zA-Z0-9_\+-\.]++)?/) {
+  if ($fnd{'addr'} =~ /\b([\w\.\!\#\$\%\&\'\*\+\/\=\?\^\_\`\{\|\}\~\-]+@[\w\-\.]+\.[\w\-\.]++)\b/i) {
     $pms->{fromname_contains_email} = 1;
     my $nochar = ($fnd{'addr'} =~ y/A-Za-z0-9//c);
     $nochar -= ($1 =~ y/A-Za-z0-9//c);
