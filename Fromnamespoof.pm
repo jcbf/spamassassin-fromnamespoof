@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.1;
+my $VERSION = 0.3;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
