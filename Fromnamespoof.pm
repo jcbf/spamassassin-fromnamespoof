@@ -198,7 +198,7 @@ sub _check_fromnamespoof
 
   if ($fnd{'owner'} ne $fad{'owner'}) {
     $pms->{fromname_owner_different} = 1;
-    $pms->{fromname_different_high_profile} = 1 if ($fnd{'owner'} =~ /^hp_/);
+    $pms->{fromname_different_high_profile} = 1 if ($fnd{'owner'} =~ /^HP_/i);
   }
 
   if ($pms->{fromname_address_different}) {
