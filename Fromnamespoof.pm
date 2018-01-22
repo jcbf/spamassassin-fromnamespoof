@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.5;
+my $VERSION = 0.51;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -68,6 +68,13 @@ sub set_config {
     }
   });
 
+
+  push(@cmds, {
+    setting => 'fns_extrachars',
+    default => 5,
+    type => $Mail::SpamAssassin::Conf::CONF_TYPE_NUMERIC,
+  });
+
   $conf->{parser}->register_commands(\@cmds);
 }
 
@@ -125,7 +132,6 @@ sub check_fromname_spoof_high_profile
   my ($self, $pms) = @_;
   _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_different_high_profile};
-
 }
 
 sub _check_fromnamespoof
@@ -155,11 +161,10 @@ sub _check_fromnamespoof
   $fnd{'addr'} = $pms->get("From:name");
 
   if ($fnd{'addr'} =~ /\b([\w\.\!\#\$\%\&\'\*\+\/\=\?\^\_\`\{\|\}\~\-]+@[\w\-\.]+\.[\w\-\.]++)\b/i) {
-    $pms->{fromname_contains_email} = 1;
     my $nochar = ($fnd{'addr'} =~ y/A-Za-z0-9//c);
     $nochar -= ($1 =~ y/A-Za-z0-9//c);
 
-    return 0 unless ((length($fnd{'addr'})+$nochar) - length($1) <= 5);
+    return 0 unless ((length($fnd{'addr'})+$nochar) - length($1) <= $self->{main}{conf}{'fns_extrachars'});
 
     $fnd{'addr'} = lc $1;
   } else {
@@ -182,6 +187,10 @@ sub _check_fromnamespoof
     $fad{'domain'} = Mail::SpamAssassin::RegistryBoundaries::uri_to_domain($fad{'addr'});
     $tod{'domain'} = Mail::SpamAssassin::RegistryBoundaries::uri_to_domain($tod{'addr'});
   }
+
+  return 0 if ($fnd{'domain'} eq '' || $fad{'domain'} eq '');
+
+  $pms->{fromname_contains_email} = 1;
 
   $fnd{'owner'} = _find_address_owner($fnd{'addr'}, $list_refs);
 
@@ -239,9 +248,9 @@ sub _find_address_owner
   $check =~ /^([^\@]+)\@(.*)$/;
 
   if ($owner ne $2) {
-    my $newaddr = "$1\@$owner";
-    return _find_address_owner($newaddr, $list_refs);
+    return _find_address_owner("$1\@$owner", $list_refs);
   }
+
   $owner =~ /^([^\.]+)\./;
   return lc $1;
 }
