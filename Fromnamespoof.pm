@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.4;
+my $VERSION = 0.5;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -81,50 +81,51 @@ sub parsed_metadata {
 sub check_fromname_different
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_address_different};
 }
 
 sub check_fromname_spoof
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
   return ($pms->{fromname_address_different} && $pms->{fromname_owner_different});
 }
 
 sub check_fromname_contains_email
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_contains_email};
 }
 
 sub check_fromname_equals_replyto
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_equals_replyto};
 }
 
 sub check_fromname_equals_to
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_equals_to_addr};
 }
 
 sub check_fromname_owners_differ
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_owner_different};
 }
 
 sub check_fromname_spoof_high_profile
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_different_high_profile};
+
 }
 
 sub _check_fromnamespoof
@@ -157,7 +158,9 @@ sub _check_fromnamespoof
     $pms->{fromname_contains_email} = 1;
     my $nochar = ($fnd{'addr'} =~ y/A-Za-z0-9//c);
     $nochar -= ($1 =~ y/A-Za-z0-9//c);
+
     return 0 unless ((length($fnd{'addr'})+$nochar) - length($1) <= 5);
+
     $fnd{'addr'} = lc $1;
   } else {
     return 0;
@@ -170,13 +173,20 @@ sub _check_fromnamespoof
 
   $tod{'addr'} = lc $toaddrs[0];
 
-  $fnd{'domain'} = Mail::SpamAssassin::Util::uri_to_domain($fnd{'addr'});
+  if (Mail::SpamAssassin::Version() lt 3.4) {
+    $fnd{'domain'} = Mail::SpamAssassin::Util::uri_to_domain($fnd{'addr'});
+    $fad{'domain'} = Mail::SpamAssassin::Util::uri_to_domain($fad{'addr'});
+    $tod{'domain'} = Mail::SpamAssassin::Util::uri_to_domain($tod{'addr'});
+  } else {
+    $fnd{'domain'} = Mail::SpamAssassin::RegistryBoundaries::uri_to_domain($fnd{'addr'});
+    $fad{'domain'} = Mail::SpamAssassin::RegistryBoundaries::uri_to_domain($fad{'addr'});
+    $tod{'domain'} = Mail::SpamAssassin::RegistryBoundaries::uri_to_domain($tod{'addr'});
+  }
+
   $fnd{'owner'} = _find_address_owner($fnd{'addr'}, $list_refs);
 
-  $fad{'domain'} = Mail::SpamAssassin::Util::uri_to_domain($fad{'addr'});
   $fad{'owner'} = _find_address_owner($fad{'addr'}, $list_refs);
 
-  $tod{'domain'} = Mail::SpamAssassin::Util::uri_to_domain($tod{'addr'});
   $tod{'owner'} = _find_address_owner($tod{'addr'}, $list_refs);
 
   $pms->{fromname_address_different} = 1 if ($fnd{'addr'} ne $fad{'addr'});
@@ -219,7 +229,13 @@ sub _find_address_owner
     }
   }
 
-  my $owner = Mail::SpamAssassin::Util::uri_to_domain($check);
+  my $owner = $check;
+
+  if (Mail::SpamAssassin::Version() lt 3.4) {
+    $owner = Mail::SpamAssassin::Util::uri_to_domain($check);
+  } else {
+    $owner = Mail::SpamAssassin::RegistryBoundaries::uri_to_domain($check);
+  }
   $check =~ /^([^\@]+)\@(.*)$/;
 
   if ($owner ne $2) {
