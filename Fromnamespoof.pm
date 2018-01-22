@@ -173,7 +173,7 @@ sub _check_fromnamespoof
 
   $tod{'addr'} = lc $toaddrs[0];
 
-  if (Mail::SpamAssassin::Version() lt 3.4) {
+  if ($Mail::SpamAssassin::VERSION <= 3.004000) {
     $fnd{'domain'} = Mail::SpamAssassin::Util::uri_to_domain($fnd{'addr'});
     $fad{'domain'} = Mail::SpamAssassin::Util::uri_to_domain($fad{'addr'});
     $tod{'domain'} = Mail::SpamAssassin::Util::uri_to_domain($tod{'addr'});
@@ -231,7 +231,7 @@ sub _find_address_owner
 
   my $owner = $check;
 
-  if (Mail::SpamAssassin::Version() lt 3.4) {
+  if ($Mail::SpamAssassin::VERSION <= 3.004000) {
     $owner = Mail::SpamAssassin::Util::uri_to_domain($check);
   } else {
     $owner = Mail::SpamAssassin::RegistryBoundaries::uri_to_domain($check);
