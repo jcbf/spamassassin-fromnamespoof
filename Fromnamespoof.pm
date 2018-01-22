@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.31;
+my $VERSION = 0.4;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -30,6 +30,7 @@ sub new
   $self->register_eval_rule("check_fromname_equals_to");
   $self->register_eval_rule("check_fromname_owners_differ");
   $self->register_eval_rule("check_fromname_spoof_high_profile");
+  $self->register_eval_rule("check_fromname_equals_replyto");
   return $self;
 }
 
@@ -70,74 +71,60 @@ sub set_config {
   $conf->{parser}->register_commands(\@cmds);
 }
 
+sub parsed_metadata {
+  my ($self, $opts) = @_;
+  my $pms = $opts->{permsgstatus};
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
+  1;
+}
+
 sub check_fromname_different
 {
   my ($self, $pms) = @_;
-
-  if (!defined $pms->{fromname_contains_email}) {
-    _check_fromnamespoof($self, $pms);
-  }
-
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
   return $pms->{fromname_address_different};
-
 }
 
 sub check_fromname_spoof
 {
   my ($self, $pms) = @_;
-
-  if (!defined $pms->{fromname_contains_email}) {
-    _check_fromnamespoof($self, $pms);
-  }
-
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
   return ($pms->{fromname_address_different} && $pms->{fromname_owner_different});
-
 }
 
 sub check_fromname_contains_email
 {
   my ($self, $pms) = @_;
-
-  if (!defined $pms->{fromname_contains_email}) {
-    _check_fromnamespoof($self, $pms);
-  }
-
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
   return $pms->{fromname_contains_email};
+}
 
+sub check_fromname_equals_replyto
+{
+  my ($self, $pms) = @_;
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
+  return $pms->{fromname_equals_replyto};
 }
 
 sub check_fromname_equals_to
 {
   my ($self, $pms) = @_;
-
-  if (!defined $pms->{fromname_contains_email}) {
-    _check_fromnamespoof($self, $pms);
-  }
-
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
   return $pms->{fromname_equals_to_addr};
 }
 
 sub check_fromname_owners_differ
 {
   my ($self, $pms) = @_;
-
-  if (!defined $pms->{fromname_contains_email}) {
-    _check_fromnamespoof($self, $pms);
-  }
-
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
   return $pms->{fromname_owner_different};
 }
 
 sub check_fromname_spoof_high_profile
 {
   my ($self, $pms) = @_;
-
-  if (!defined $pms->{fromname_contains_email}) {
-    _check_fromnamespoof($self, $pms);
-  }
-
+  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email};
   return $pms->{fromname_different_high_profile};
-
 }
 
 sub _check_fromnamespoof
@@ -150,6 +137,7 @@ sub _check_fromnamespoof
   $pms->{fromname_domain_different} = 0;
   $pms->{fromname_owner_different} = 0;
   $pms->{fromname_different_high_profile} = 0;
+  $pms->{fromname_equals_replyto} = 0;
 
   my $list_refs = {};
 
@@ -169,16 +157,17 @@ sub _check_fromnamespoof
     $pms->{fromname_contains_email} = 1;
     my $nochar = ($fnd{'addr'} =~ y/A-Za-z0-9//c);
     $nochar -= ($1 =~ y/A-Za-z0-9//c);
-
     return 0 unless ((length($fnd{'addr'})+$nochar) - length($1) <= 5);
-
     $fnd{'addr'} = lc $1;
   } else {
     return 0;
   }
 
+  my $replyto = lc $pms->get("Reply-To:addr");
+
   $fad{'addr'} = lc $pms->get("From:addr");
   my @toaddrs = $pms->all_to_addrs();
+
   $tod{'addr'} = lc $toaddrs[0];
 
   $fnd{'domain'} = Mail::SpamAssassin::Util::uri_to_domain($fnd{'addr'});
@@ -196,18 +185,20 @@ sub _check_fromnamespoof
 
   $pms->{fromname_equals_to_addr} = 1 if ($fnd{'addr'} eq $tod{addr});
 
+  $pms->{fromname_equals_replyto} = 1 if ($fnd{'addr'} eq $replyto);
+
   if ($fnd{'owner'} ne $fad{'owner'}) {
     $pms->{fromname_owner_different} = 1;
-    $pms->{fromname_different_high_profile} = 1 if ($fnd{'owner'} =~ /^HP_/i);
+    $pms->{fromname_different_high_profile} = 1 if ($fnd{'owner'} =~ /^hp_/i);
   }
 
   if ($pms->{fromname_address_different}) {
-    $pms->set_tag("FNS_FNAME_ADDR", $fnd{'addr'});
-    $pms->set_tag("FNS_FADDR_ADDR", $fad{'addr'});
-    $pms->set_tag("FNS_FNAME_OWNER", $fnd{'owner'});
-    $pms->set_tag("FNS_FADDR_OWNER", $fad{'owner'});
-    $pms->set_tag("FNS_FNAME_DOMAIN", $fnd{'domain'});
-    $pms->set_tag("FNS_FADDR_DOMAIN", $fad{'domain'});
+    $pms->set_tag("FNSFNAMEADDR", $fnd{'addr'});
+    $pms->set_tag("FNSFADDRADDR", $fad{'addr'});
+    $pms->set_tag("FNSFNAMEOWNER", $fnd{'owner'});
+    $pms->set_tag("FNSFADDROWNER", $fad{'owner'});
+    $pms->set_tag("FNSFNAMEDOMAIN", $fnd{'domain'});
+    $pms->set_tag("FNSFADDRDOMAIN", $fad{'domain'});
 
     dbg("From name spoof: $fnd{'addr'} $fnd{'domain'} $fnd{'owner'}");
     dbg("Actual From: $fad{'addr'} $fad{'domain'} $fad{'owner'}");
@@ -227,6 +218,7 @@ sub _find_address_owner
       }
     }
   }
+
   my $owner = Mail::SpamAssassin::Util::uri_to_domain($check);
   $check =~ /^([^\@]+)\@(.*)$/;
 
@@ -236,7 +228,6 @@ sub _find_address_owner
   }
   $owner =~ /^([^\.]+)\./;
   return lc $1;
-
 }
 
 1;
