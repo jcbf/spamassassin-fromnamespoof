@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.51;
+my $VERSION = 0.53;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -45,7 +45,7 @@ sub set_config {
       my($conf, $key, $value, $line) = @_;
       local($1,$2);
       if ($value !~ /^ \( (.*?) \) \s+ (.*) \z/sx) {
-        return '-99999999999999';
+        return $Mail::SpamAssassin::Conf::MISSING_REQUIRED_VALUE;
       }
       my $listname = "FNS_$1";
       $value = $2;
@@ -60,7 +60,7 @@ sub set_config {
       my($conf, $key, $value, $line) = @_;
       local($1,$2);
       if ($value !~ /^ \( (.*?) \) \s+ (.*) \z/sx) {
-        return '-99999999999999';
+        return $Mail::SpamAssassin::Conf::MISSING_REQUIRED_VALUE;
       }
       my $listname = "FNS_$1";
       $value = $2;
@@ -68,11 +68,38 @@ sub set_config {
     }
   });
 
-
   push(@cmds, {
     setting => 'fns_extrachars',
     default => 5,
     type => $Mail::SpamAssassin::Conf::CONF_TYPE_NUMERIC,
+  });
+
+  push (@cmds, {
+    setting => 'fns_ignore_dkim',
+    default => [],
+    type => $Mail::SpamAssassin::Conf::CONF_TYPE_STRINGLIST,
+    code => sub {
+      my ($self, $key, $value, $line) = @_;
+      if ($value eq '') {
+        return $Mail::SpamAssassin::Conf::MISSING_REQUIRED_VALUE;
+      }
+      $self->{fns_ignore_dkim} = {};
+      $self->{fns_ignore_dkim}->{$_} = 1 for (split(/\s+/, $value));
+    }
+  });
+
+  push (@cmds, {
+    setting => 'fns_ignore_headers',
+    default => [],
+    type => $Mail::SpamAssassin::Conf::CONF_TYPE_STRINGLIST,
+    code => sub {
+      my ($self, $key, $value, $line) = @_;
+      if ($value eq '') {
+        return $Mail::SpamAssassin::Conf::MISSING_REQUIRED_VALUE;
+      }
+      $self->{fns_ignore_header} = {};
+      $self->{fns_ignore_header}->{$_} = 1 for (split(/\s+/, $value));
+    }
   });
 
   $conf->{parser}->register_commands(\@cmds);
@@ -145,6 +172,14 @@ sub _check_fromnamespoof
   $pms->{fromname_owner_different} = 0;
   $pms->{fromname_different_high_profile} = 0;
   $pms->{fromname_equals_replyto} = 0;
+
+  foreach my $addr (split / /, $pms->get_tag('DKIMDOMAIN')) {
+    return 0 if ($self->{main}{conf}{fns_ignore_dkim}{$addr})l
+  }
+
+  foreach my $iheader (keys %{$self->{main}{conf}{fns_ignore_header}}) {
+    return 0 if ($pms->get($iheader));
+  }
 
   my $list_refs = {};
 

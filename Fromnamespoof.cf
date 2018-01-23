@@ -1,5 +1,10 @@
 ifplugin Mail::SpamAssassin::Plugin::Fromnamespoof
 
+
+  fns_ignore_dkim linkedin.com googlegroups.com yahoogroups.com yahoogroups.de
+
+  fns_ignore_headers List-Id List-Post Mailing-List X-Forwarded-For
+
   fns_add_addrlist   (HP_EBAY)     *@ebay.com
   fns_add_addrlist   (HP_PAYPAL)   *@paypal.com
   fns_add_addrlist   (GMAIL)  *@gmail.com *@googlemail.com
