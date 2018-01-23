@@ -108,7 +108,11 @@ sub set_config {
 sub parsed_metadata {
   my ($self, $opts) = @_;
   my $pms = $opts->{permsgstatus};
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
+  $pms->action_depends_on_tags('DKIMDOMAIN',
+      sub { my($pms,@args) = @_;
+        _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
+      }
+  );
   1;
 }
 
