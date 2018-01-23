@@ -178,7 +178,7 @@ sub _check_fromnamespoof
   $pms->{fromname_equals_replyto} = 0;
 
   foreach my $addr (split / /, $pms->get_tag('DKIMDOMAIN')) {
-    return 0 if ($self->{main}{conf}{fns_ignore_dkim}{$addr})l
+    return 0 if ($self->{main}{conf}{fns_ignore_dkim}{$addr});
   }
 
   foreach my $iheader (keys %{$self->{main}{conf}{fns_ignore_header}}) {
