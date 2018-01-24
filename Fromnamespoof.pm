@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.53;
+my $VERSION = 0.531;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -271,7 +271,7 @@ sub _find_address_owner
     foreach my $white_addr (keys %{$list_refs->{$owner}}) {
       my $regexp = qr/$list_refs->{$owner}{$white_addr}/i;
       if ($check =~ /$regexp/)  {
-        $owner =~ s/FNS_//;
+        $owner =~ s/^FNS_//i;
         return lc $owner;
       }
     }
