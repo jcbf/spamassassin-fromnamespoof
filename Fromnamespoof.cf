@@ -5,8 +5,6 @@ ifplugin Mail::SpamAssassin::Plugin::Fromnamespoof
 
   fns_ignore_headers List-Id List-Post Mailing-List X-Forwarded-For
 
-  fns_add_addrlist   (HP_EBAY)     *@ebay.com
-  fns_add_addrlist   (HP_PAYPAL)   *@paypal.com
   fns_add_addrlist   (GMAIL)  *@gmail.com *@googlemail.com
 
   # header   __PLUGIN_FROMNAME_EMAIL eval:check_fromname_contains_email()
@@ -19,13 +17,8 @@ ifplugin Mail::SpamAssassin::Plugin::Fromnamespoof
 
   header   __PLUGIN_FROMNAME_EQUALS_TO eval:check_fromname_equals_to()
 
-  header   __PLUGIN_FROMNAME_OWNER_HP eval:check_fromname_spoof_high_profile()
-
   meta FROM_SPOOFED_EMAIL  (__PLUGIN_FROMNAME_SPOOF)
   score FROM_SPOOFED_EMAIL 1
-
-  meta FROM_SPOOFED_EMAIL_HP (FROM_SPOOFED_EMAIL && __PLUGIN_FROMNAME_OWNER_HP)
-  score FROM_SPOOFED_EMAIL_HP 2
 
   meta FROM_EQUALS_TO_SPOOF  (FROM_SPOOFED_EMAIL && __PLUGIN_FROMNAME_EQUALS_TO)
   score FROM_EQUALS_TO_SPOOF 1
@@ -35,5 +28,8 @@ ifplugin Mail::SpamAssassin::Plugin::Fromnamespoof
 
   meta FROMNAME_SPOOF_FREEMAIL (FREEMAIL_FROM && FROM_SPOOFED_EMAIL)
   score FROMNAME_SPOOF_FREEMAIL 2.0
+
+  #askdns __FNS_HIGHPROFILE _FNSFNAMEDOMAIN_.some.reputation.service A 127.0.0.1
+  #meta FROMNAME_SPOOF_HIGHPROFILE (__FNS_HIGHPROFILE && __PLUGIN_FROMNAME_SPOOF)
 
 endif
