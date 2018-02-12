@@ -1,35 +1,45 @@
 ifplugin Mail::SpamAssassin::Plugin::Fromnamespoof
-
-
+  # skip message signed by these DKIM senders
   fns_ignore_dkim linkedin.com googlegroups.com yahoogroups.com yahoogroups.de
 
+  # skip messages with one or more of these headers
   fns_ignore_headers List-Id List-Post Mailing-List X-Forwarded-For
 
+  # group similar domains to one name
   fns_add_addrlist   (GMAIL)  *@gmail.com *@googlemail.com
 
+  # Does the From:name look like an email address
   # header   __PLUGIN_FROMNAME_EMAIL eval:check_fromname_contains_email()
 
+  # Is the From:name differen to the from header
   # header   __PLUGIN_FROMNAME_DIFFERENT eval:check_fromname_different()
 
+  # From:name owners differ
   # header   __PLUGIN_FROMNAME_OWNERS_DIFFER eval:check_fromname_owners_differ()
 
+  # From:name and From:address don't match and owners differ
   header   __PLUGIN_FROMNAME_SPOOF eval:check_fromname_spoof()
-
+  
+  # From:name address matches To:address
   header   __PLUGIN_FROMNAME_EQUALS_TO eval:check_fromname_equals_to()
 
-  meta FROM_SPOOFED_EMAIL  (__PLUGIN_FROMNAME_SPOOF)
-  score FROM_SPOOFED_EMAIL 1
+  meta     FROMNAME_SPOOF  (__PLUGIN_FROMNAME_SPOOF)
+  describe FROMNAME_SPOOF From:name doesn't match From:address
+  score    FROMNAME_SPOOF 1
 
-  meta FROM_EQUALS_TO_SPOOF  (FROM_SPOOFED_EMAIL && __PLUGIN_FROMNAME_EQUALS_TO)
-  score FROM_EQUALS_TO_SPOOF 1
+  meta     FROMNAME_SPOOF_EQUALS_TO  (FROMNAME_SPOOF && __PLUGIN_FROMNAME_EQUALS_TO)
+  describe FROMNAME_SPOOF_EQUALS_TO From:name is spoof to look like To: address
+  score    FROMNAME_SPOOF_EQUALS_TO 1
 
-  meta FROM_EQUALS_TO_NOSPOOF (!__PLUGIN_SPOOFEDFROM && __PLUGIN_FROM_EQUALS_TO)
-  score FROM_EQUALS_TO_NOSPOOF 0.1
+  meta     FROMNAME_EQUALS_TO (!FROMNAME_SPOOF && __PLUGIN_FROM_EQUALS_TO)
+  describe FROMNAME_EQUALS_TO From:name matches To: address
+  score    FROMNAME_EQUALS_TO 0.01
 
-  meta FROMNAME_SPOOF_FREEMAIL (FREEMAIL_FROM && FROM_SPOOFED_EMAIL)
-  score FROMNAME_SPOOF_FREEMAIL 2.0
+  meta     FROMNAME_SPOOF_FREEMAIL (FREEMAIL_FROM && FROMNAME_SPOOF)
+  describe FROMNAME_SPOOF_FREEMAIL From:name spoof and Freemail From:address
+  score    FROMNAME_SPOOF_FREEMAIL 2.0
 
   #askdns __FNS_HIGHPROFILE _FNSFNAMEDOMAIN_.some.reputation.service A 127.0.0.1
-  #meta FROMNAME_SPOOF_HIGHPROFILE (__FNS_HIGHPROFILE && __PLUGIN_FROMNAME_SPOOF)
+  #meta FROMNAME_SPOOF_HIGHPROFILE (__FNS_HIGHPROFILE && FROMNAME_SPOOF)
 
 endif
