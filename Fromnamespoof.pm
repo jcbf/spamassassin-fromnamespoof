@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.7;
+my $VERSION = 0.71;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -13,6 +13,8 @@ sub dbg { Mail::SpamAssassin::Plugin::dbg ("Fromnamespoof: @_"); }
 
 sub uri_to_domain {
   my ($self, $domain) = @_;
+
+  return unless defined $domain;
 
   if ($Mail::SpamAssassin::VERSION <= 3.004000) {
     Mail::SpamAssassin::Util::uri_to_domain($domain);
