@@ -1,9 +1,10 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.6;
+my $VERSION = 0.7;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
 use List::Util ();
+use Mail::SpamAssassin::Util;
 
 use vars qw(@ISA);
 @ISA = qw(Mail::SpamAssassin::Plugin);
@@ -11,10 +12,12 @@ use vars qw(@ISA);
 sub dbg { Mail::SpamAssassin::Plugin::dbg ("Fromnamespoof: @_"); }
 
 sub uri_to_domain {
+  my ($self, $domain) = @_;
+
   if ($Mail::SpamAssassin::VERSION <= 3.004000) {
-    Mail::SpamAssassin::Util::uri_to_domain($_[0]);
+    Mail::SpamAssassin::Util::uri_to_domain($domain);
   } else {
-    Mail::SpamAssassin::RegistryBoundaries::uri_to_domain($_[0]);
+    $self->{main}->{registryboundaries}->uri_to_domain($domain);
   }
 }
 
@@ -118,7 +121,7 @@ sub parsed_metadata {
   my $pms = $opts->{permsgstatus};
   $pms->action_depends_on_tags('DKIMDOMAIN',
       sub { my($pms,@args) = @_;
-        _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
+        $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
       }
   );
   1;
@@ -127,49 +130,49 @@ sub parsed_metadata {
 sub check_fromname_different
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_address_different};
 }
 
 sub check_fromname_spoof
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
   return ($pms->{fromname_address_different} && $pms->{fromname_owner_different});
 }
 
 sub check_fromname_contains_email
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_contains_email};
 }
 
 sub check_fromname_equals_replyto
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_equals_replyto};
 }
 
 sub check_fromname_equals_to
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_equals_to_addr};
 }
 
 sub check_fromname_owners_differ
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_owner_different};
 }
 
 sub check_fromname_spoof_high_profile
 {
   my ($self, $pms) = @_;
-  _check_fromnamespoof($self, $pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
   return $pms->{fromname_different_high_profile};
 }
 
@@ -225,19 +228,19 @@ sub _check_fromnamespoof
 
   $tod{'addr'} = lc $toaddrs[0];
 
-  $fnd{'domain'} = uri_to_domain($fnd{'addr'});
-  $fad{'domain'} = uri_to_domain($fad{'addr'});
-  $tod{'domain'} = uri_to_domain($tod{'addr'});
+  $fnd{'domain'} = $self->uri_to_domain($fnd{'addr'});
+  $fad{'domain'} = $self->uri_to_domain($fad{'addr'});
+  $tod{'domain'} = $self->uri_to_domain($tod{'addr'});
 
   return 0 unless (defined $fnd{'domain'} && defined $fad{'domain'});
 
   $pms->{fromname_contains_email} = 1;
 
-  $fnd{'owner'} = _find_address_owner($fnd{'addr'}, $list_refs);
+  $fnd{'owner'} = $self->_find_address_owner($fnd{'addr'}, $list_refs);
 
-  $fad{'owner'} = _find_address_owner($fad{'addr'}, $list_refs);
+  $fad{'owner'} = $self->_find_address_owner($fad{'addr'}, $list_refs);
 
-  $tod{'owner'} = _find_address_owner($tod{'addr'}, $list_refs);
+  $tod{'owner'} = $self->_find_address_owner($tod{'addr'}, $list_refs);
 
   $pms->{fromname_address_different} = 1 if ($fnd{'addr'} ne $fad{'addr'});
 
@@ -268,7 +271,7 @@ sub _check_fromnamespoof
 
 sub _find_address_owner
 {
-  my ($check, $list_refs) = @_;
+  my ($self, $check, $list_refs) = @_;
   foreach my $owner (keys %{$list_refs}) {
     foreach my $white_addr (keys %{$list_refs->{$owner}}) {
       my $regexp = qr/$list_refs->{$owner}{$white_addr}/i;
@@ -279,12 +282,12 @@ sub _find_address_owner
     }
   }
 
-  my $owner = uri_to_domain($check);
+  my $owner = $self->uri_to_domain($check);
 
   $check =~ /^([^\@]+)\@(.*)$/;
 
   if ($owner ne $2) {
-    return _find_address_owner("$1\@$owner", $list_refs);
+    return $self->_find_address_owner("$1\@$owner", $list_refs);
   }
 
   $owner =~ /^([^\.]+)\./;
