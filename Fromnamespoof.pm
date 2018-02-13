@@ -16,7 +16,7 @@ sub uri_to_domain {
 
   return unless defined $domain;
 
-  if ($Mail::SpamAssassin::VERSION <= 3.004000) {
+  if ($Mail::SpamAssassin::VERSION <= 3.004001) {
     Mail::SpamAssassin::Util::uri_to_domain($domain);
   } else {
     $self->{main}->{registryboundaries}->uri_to_domain($domain);
