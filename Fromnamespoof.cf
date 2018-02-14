@@ -31,7 +31,7 @@ ifplugin Mail::SpamAssassin::Plugin::Fromnamespoof
   describe FROMNAME_SPOOF_EQUALS_TO From:name is spoof to look like To: address
   score    FROMNAME_SPOOF_EQUALS_TO 1
 
-  meta     FROMNAME_EQUALS_TO (!FROMNAME_SPOOF && __PLUGIN_FROM_EQUALS_TO)
+  meta     FROMNAME_EQUALS_TO (!FROMNAME_SPOOF && __PLUGIN_FROMNAME_EQUALS_TO)
   describe FROMNAME_EQUALS_TO From:name matches To: address
   score    FROMNAME_EQUALS_TO 0.01
 
