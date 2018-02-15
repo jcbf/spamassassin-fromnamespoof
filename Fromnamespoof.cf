@@ -17,6 +17,9 @@ ifplugin Mail::SpamAssassin::Plugin::Fromnamespoof
   # From:name owners differ
   # header   __PLUGIN_FROMNAME_OWNERS_DIFFER eval:check_fromname_owners_differ()
 
+  # From:name domain differs to from header
+  # header   __PLUGIN_FROMNAME_DOMAIN_DIFFER eval:check_fromname_domain_differ()
+
   # From:name and From:address don't match and owners differ
   header   __PLUGIN_FROMNAME_SPOOF eval:check_fromname_spoof()
   

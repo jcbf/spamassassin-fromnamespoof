@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.72;
+my $VERSION = 0.74;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -39,6 +39,7 @@ sub new
   # the important bit!
   $self->register_eval_rule("check_fromname_spoof");
   $self->register_eval_rule("check_fromname_different");
+  $self->register_eval_rule("check_fromname_domain_differ");
   $self->register_eval_rule("check_fromname_contains_email");
   $self->register_eval_rule("check_fromname_equals_to");
   $self->register_eval_rule("check_fromname_owners_differ");
@@ -115,6 +116,12 @@ sub set_config {
     }
   });
 
+  push(@cmds, {
+    setting => 'fns_check',
+    default => 1,
+    type => $Mail::SpamAssassin::Conf::CONF_TYPE_NUMERIC,
+  });
+
   $conf->{parser}->register_commands(\@cmds);
 }
 
@@ -136,11 +143,27 @@ sub check_fromname_different
   return $pms->{fromname_address_different};
 }
 
+sub check_fromname_domain_differ
+{
+  my ($self, $pms) = @_;
+  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
+  return $pms->{fromname_domain_different};
+}
+
 sub check_fromname_spoof
 {
   my ($self, $pms) = @_;
   $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
-  return ($pms->{fromname_address_different} && $pms->{fromname_owner_different});
+
+
+  my @array = (
+    ($pms->{fromname_address_different}) ,
+    ($pms->{fromname_address_different} && $pms->{fromname_owner_different}) ,
+    ($pms->{fromname_address_different} && $pms->{fromname_domain_different})
+  );
+
+  return @array[$self->{main}{conf}{fns_check}];
+
 }
 
 sub check_fromname_contains_email
