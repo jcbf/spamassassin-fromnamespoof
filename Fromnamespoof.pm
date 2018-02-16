@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.74;
+my $VERSION = 0.75;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -152,9 +152,10 @@ sub check_fromname_domain_differ
 
 sub check_fromname_spoof
 {
-  my ($self, $pms) = @_;
+  my ($self, $pms, $check_lvl) = @_;
   $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
 
+  $check_lvl //= $self->{main}{conf}{fns_check};
 
   my @array = (
     ($pms->{fromname_address_different}) ,
@@ -162,7 +163,7 @@ sub check_fromname_spoof
     ($pms->{fromname_address_different} && $pms->{fromname_domain_different})
   );
 
-  return @array[$self->{main}{conf}{fns_check}];
+  return @array[$check_lvl];
 
 }
 
