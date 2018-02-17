@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.75;
+my $VERSION = 0.751;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -163,7 +163,7 @@ sub check_fromname_spoof
     ($pms->{fromname_address_different} && $pms->{fromname_domain_different})
   );
 
-  return @array[$check_lvl];
+  return $array[$check_lvl];
 
 }
 
