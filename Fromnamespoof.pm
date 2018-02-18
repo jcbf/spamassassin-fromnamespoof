@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.751;
+my $VERSION = 0.76;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -130,7 +130,7 @@ sub parsed_metadata {
   my $pms = $opts->{permsgstatus};
   $pms->action_depends_on_tags('DKIMDOMAIN',
       sub { my($pms,@args) = @_;
-        $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
+        $self->_check_fromnamespoof($pms);
       }
   );
   1;
@@ -139,21 +139,21 @@ sub parsed_metadata {
 sub check_fromname_different
 {
   my ($self, $pms) = @_;
-  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms);
   return $pms->{fromname_address_different};
 }
 
 sub check_fromname_domain_differ
 {
   my ($self, $pms) = @_;
-  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms);
   return $pms->{fromname_domain_different};
 }
 
 sub check_fromname_spoof
 {
   my ($self, $pms, $check_lvl) = @_;
-  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms);
 
   $check_lvl //= $self->{main}{conf}{fns_check};
 
@@ -170,41 +170,43 @@ sub check_fromname_spoof
 sub check_fromname_contains_email
 {
   my ($self, $pms) = @_;
-  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms);
   return $pms->{fromname_contains_email};
 }
 
 sub check_fromname_equals_replyto
 {
   my ($self, $pms) = @_;
-  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms);
   return $pms->{fromname_equals_replyto};
 }
 
 sub check_fromname_equals_to
 {
   my ($self, $pms) = @_;
-  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms);
   return $pms->{fromname_equals_to_addr};
 }
 
 sub check_fromname_owners_differ
 {
   my ($self, $pms) = @_;
-  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms);
   return $pms->{fromname_owner_different};
 }
 
 sub check_fromname_spoof_high_profile
 {
   my ($self, $pms) = @_;
-  $self->_check_fromnamespoof($pms) if (!defined $pms->{fromname_contains_email});
+  $self->_check_fromnamespoof($pms);
   return $pms->{fromname_different_high_profile};
 }
 
 sub _check_fromnamespoof
 {
   my ($self, $pms) = @_;
+
+  return if (defined $pms->{fromname_contains_email});
 
   $pms->{fromname_contains_email} = 0;
   $pms->{fromname_address_different} = 0;
