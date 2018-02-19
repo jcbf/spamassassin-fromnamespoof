@@ -1,1 +1,3 @@
+if (version >= 3.004000)
 loadplugin Mail::SpamAssassin::Plugin::Fromnamespoof Fromnamespoof.pm
+endif
