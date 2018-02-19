@@ -1,3 +1,4 @@
+if (version >= 3.004000)
 ifplugin Mail::SpamAssassin::Plugin::Fromnamespoof
   # skip message signed by these DKIM senders
   fns_ignore_dkim linkedin.com googlegroups.com yahoogroups.com yahoogroups.de
@@ -45,4 +46,5 @@ ifplugin Mail::SpamAssassin::Plugin::Fromnamespoof
   #askdns __FNS_HIGHPROFILE _FNSFNAMEDOMAIN_.some.reputation.service A 127.0.0.1
   #meta FROMNAME_SPOOF_HIGHPROFILE (__FNS_HIGHPROFILE && FROMNAME_SPOOF)
 
+endif
 endif
