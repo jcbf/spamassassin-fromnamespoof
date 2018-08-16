@@ -1,5 +1,5 @@
 package Mail::SpamAssassin::Plugin::Fromnamespoof;
-my $VERSION = 0.76;
+my $VERSION = 0.77;
 
 use strict;
 use Mail::SpamAssassin::Plugin;
@@ -216,7 +216,7 @@ sub _check_fromnamespoof
   $pms->{fromname_different_high_profile} = 0;
   $pms->{fromname_equals_replyto} = 0;
 
-  foreach my $addr (split / /, $pms->get_tag('DKIMDOMAIN')) {
+  foreach my $addr (split / /, $pms->get_tag('DKIMDOMAIN') || '') {
     return 0 if ($self->{main}{conf}{fns_ignore_dkim}{$addr});
   }
 
