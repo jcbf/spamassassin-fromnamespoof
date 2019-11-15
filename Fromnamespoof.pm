@@ -45,6 +45,7 @@ sub new
   $self->register_eval_rule("check_fromname_owners_differ");
   $self->register_eval_rule("check_fromname_spoof_high_profile");
   $self->register_eval_rule("check_fromname_equals_replyto");
+  $self->register_eval_rule("check_fromname_domain_equals_replyto");
   return $self;
 }
 
@@ -181,6 +182,13 @@ sub check_fromname_equals_replyto
   return $pms->{fromname_equals_replyto};
 }
 
+sub check_fromname_domain_equals_replyto
+{
+  my ($self, $pms) = @_;
+  $self->_check_fromnamespoof($pms);
+  return $pms->{fromname_domain_equals_replyto};
+}
+
 sub check_fromname_equals_to
 {
   my ($self, $pms) = @_;
@@ -215,6 +223,7 @@ sub _check_fromnamespoof
   $pms->{fromname_owner_different} = 0;
   $pms->{fromname_different_high_profile} = 0;
   $pms->{fromname_equals_replyto} = 0;
+  $pms->{fromname_domain_equals_replyto} = 0;
 
   foreach my $addr (split / /, $pms->get_tag('DKIMDOMAIN') || '') {
     return 0 if ($self->{main}{conf}{fns_ignore_dkim}{$addr});
@@ -235,6 +244,7 @@ sub _check_fromnamespoof
   my %fnd = ();
   my %fad = ();
   my %tod = ();
+  my %replyto = ();
 
   $fnd{'addr'} = $pms->get("From:name");
 
@@ -249,7 +259,7 @@ sub _check_fromnamespoof
     return 0;
   }
 
-  my $replyto = lc $pms->get("Reply-To:addr");
+  $replyto{'addr'} = lc $pms->get("Reply-To:addr");
 
   $fad{'addr'} = lc $pms->get("From:addr");
   my @toaddrs = $pms->all_to_addrs();
@@ -259,6 +269,7 @@ sub _check_fromnamespoof
   $fnd{'domain'} = $self->uri_to_domain($fnd{'addr'});
   $fad{'domain'} = $self->uri_to_domain($fad{'addr'});
   $tod{'domain'} = $self->uri_to_domain($tod{'addr'});
+  $replyto{'domain'} = $self->uri_to_domain($replyto{'addr'});
 
   return 0 unless (defined $fnd{'domain'} && defined $fad{'domain'});
 
@@ -276,7 +287,9 @@ sub _check_fromnamespoof
 
   $pms->{fromname_equals_to_addr} = 1 if ($fnd{'addr'} eq $tod{addr});
 
-  $pms->{fromname_equals_replyto} = 1 if ($fnd{'addr'} eq $replyto);
+  $pms->{fromname_equals_replyto} = 1 if ($fnd{'addr'} eq $replyto{'addr'});
+
+  $pms->{fromname_domain_equals_replyto} = 1 if ($fad{'domain'} eq $replyto{'domain'});
 
   if ($fnd{'owner'} ne $fad{'owner'}) {
     $pms->{fromname_owner_different} = 1;
