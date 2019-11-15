@@ -27,6 +27,9 @@ ifplugin Mail::SpamAssassin::Plugin::Fromnamespoof
   # From:name address matches To:address
   header   __PLUGIN_FROMNAME_EQUALS_TO eval:check_fromname_equals_to()
 
+  # From:address domain matches Reply-To:address domain
+  header   __PLUGIN_FROMNAME_DOMAIN_EQUALS_REPLYTO eval:check_fromname_domain_equals_replyto()
+
   meta     FROMNAME_SPOOF  (__PLUGIN_FROMNAME_SPOOF)
   describe FROMNAME_SPOOF From:name doesn't match From:address
   score    FROMNAME_SPOOF 1
